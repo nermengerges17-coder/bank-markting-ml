@@ -2,11 +2,17 @@ import streamlit as st
 import pandas as pd
 import pickle
 
-with open(r"D:\New folder\Final_model (1).pkl", "rb") as f:
+
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+with open(BASE_DIR / "Final_model (1).pkl", "rb") as f:
     model = pickle.load(f)
 
-with open(r"D:\New folder\model_scaler (1).pkl", "rb") as f:
+with open(BASE_DIR / "model_scaler (1).pkl", "rb") as f:
     preprocess = pickle.load(f)
+
 
 scaler = preprocess["scaler"]
 feature_names = preprocess["feature_names"]
