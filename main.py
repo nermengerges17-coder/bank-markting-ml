@@ -5,7 +5,7 @@ import pandas as pd
 import pickle
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(_file_).resolve().parent
 
 MODEL_PATH = BASE_DIR / "Final_model (1).pkl"
 PREPROCESS_PATH = BASE_DIR / "model_scaler (1).pkl"
@@ -30,8 +30,8 @@ layout="centered"
 st.title("🏦 Bank Deposit Predictor")
 
 st.write(
-"Enter the customer's basic information "
-"to predict whether they will subscribe to a deposit."
+"Enter the customer information to predict "
+"whether the customer will subscribe to a deposit."
 )
 
 user_inputs = {}
@@ -64,38 +64,48 @@ user_inputs["job"] = st.selectbox(
 ]
 )
 
-user_inputs["education"] = st.selectbox(
-"Education",
-[
-"primary",
-"secondary",
-"tertiary",
-"unknown"
-]
-)
-
 user_inputs["marital"] = st.selectbox(
 "Marital Status",
-[
-"married",
-"single",
-"divorced"
-]
+["married", "single", "divorced"]
+)
+
+user_inputs["education"] = st.selectbox(
+"Education",
+["primary", "secondary", "tertiary", "unknown"]
 )
 
 user_inputs["default"] = st.selectbox(
-"Has Credit Default?",
+"Credit Default",
 ["no", "yes"]
 )
 
+user_inputs["balance"] = st.number_input(
+"Balance",
+value=0.0,
+step=100.0
+)
+
 user_inputs["housing"] = st.selectbox(
-"Has Housing Loan?",
+"Housing Loan",
 ["no", "yes"]
 )
 
 user_inputs["loan"] = st.selectbox(
-"Has Personal Loan?",
+"Personal Loan",
 ["no", "yes"]
+)
+
+user_inputs["contact"] = st.selectbox(
+"Contact",
+["cellular", "telephone", "unknown"]
+)
+
+user_inputs["day"] = st.number_input(
+"Contact Day",
+min_value=1,
+max_value=31,
+value=1,
+step=1
 )
 
 user_inputs["month"] = st.selectbox(
@@ -113,6 +123,44 @@ user_inputs["month"] = st.selectbox(
 "oct",
 "nov",
 "dec"
+]
+)
+
+user_inputs["duration"] = st.number_input(
+"Call Duration",
+min_value=0.0,
+value=0.0,
+step=1.0
+)
+
+user_inputs["campaign"] = st.number_input(
+"Campaign",
+min_value=0.0,
+value=1.0,
+step=1.0
+)
+
+user_inputs["pdays"] = st.number_input(
+"Previous Contact Days",
+min_value=-1.0,
+value=-1.0,
+step=1.0
+)
+
+user_inputs["previous"] = st.number_input(
+"Previous Contacts",
+min_value=0.0,
+value=0.0,
+step=1.0
+)
+
+user_inputs["poutcome"] = st.selectbox(
+"Previous Outcome",
+[
+"unknown",
+"failure",
+"success",
+"other"
 ]
 )
 if st.button("🔮 Predict", use_container_width=True):
