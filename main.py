@@ -5,8 +5,7 @@ import pandas as pd
 import pickle
 from pathlib import Path
 
-BASE_DIR = Path(**file**).resolve().parent
-
+BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "Final_model (1).pkl"
 PREPROCESS_PATH = BASE_DIR / "model_scaler (1).pkl"
 
