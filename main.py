@@ -1,37 +1,30 @@
+
 import streamlit as st
 import pandas as pd
 import pickle
-
-
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 
-with open(BASE_DIR / "Final_model (1).pkl", "rb") as f:
+MODEL_PATH = BASE_DIR / "Final_model (1).pkl"
+PREPROCESS_PATH = BASE_DIR / "model_scaler (1).pkl"
+
+with open(MODEL_PATH, "rb") as f:
     model = pickle.load(f)
 
-with open(BASE_DIR / "model_scaler (1).pkl", "rb") as f:
+with open(PREPROCESS_PATH, "rb") as f:
     preprocess = pickle.load(f)
-
 
 scaler = preprocess["scaler"]
 feature_names = preprocess["feature_names"]
 numeric_cols = preprocess["numeric_cols"]
 categorical_cols = preprocess["categorical_cols"]
 
-
-
-categorical_cols = [
-    "job",
-    "education",
-    "marital",
-    "default",
-    "housing",
-    "loan",
-    "month",
-    "loan_housing",
-    "age_group"
-]
+st.set_page_config(
+    page_title="Bank Deposit Predictor",
+    page_icon="🏦",
+    layout="centered"
+)
 
 st.title("Bank Deposit Predictor")
 
@@ -41,6 +34,8 @@ st.write(
 )
 
 user_inputs = {}
+
+st.subheader("Customer Information")
 
 user_inputs["job"] = st.selectbox(
     "Job",
@@ -127,60 +122,89 @@ user_inputs["age_group"] = st.selectbox(
     ]
 )
 
+st.subheader("Numerical Information")
+
 for col in numeric_cols:
     user_inputs[col] = st.number_input(
         col.replace("_", " ").title(),
         min_value=0.0,
+        value=0.0,
         step=1.0
     )
 
-if st.button("Predict"):
+if st.button("🔮 Predict", use_container_width=True):
 
-    df = pd.DataFrame([user_inputs])
+    try:
+        df = pd.DataFrame([user_inputs])
 
-    df = pd.get_dummies(
-        df,
-        columns=categorical_cols,
-        dtype=int
-    )
+        df_encoded = pd.get_dummies(
+            df,
+            columns=categorical_cols,
+            dtype=int
+        )
 
-    df = df.loc[:, ~df.columns.duplicated()]
+        df_encoded = df_encoded.loc[
+            :,
+            ~df_encoded.columns.duplicated()
+        ]
 
-    df[numeric_cols] = scaler.transform(
-        df[numeric_cols]
-    )
+        existing_numeric_cols = [
+            col for col in numeric_cols
+            if col in df_encoded.columns
+        ]
 
-    if hasattr(model, "feature_names_in_"):
+        if existing_numeric_cols:
+            df_encoded[existing_numeric_cols] = scaler.transform(
+                df_encoded[existing_numeric_cols]
+            )
 
-        model_features = list(model.feature_names_in_)
+        expected_features = list(feature_names)
 
-        df = df.reindex(
-            columns=model_features,
+        for col in expected_features:
+            if col not in df_encoded.columns:
+                df_encoded[col] = 0
+
+        df_encoded = df_encoded.reindex(
+            columns=expected_features,
             fill_value=0
         )
 
-    else:
+        if hasattr(model, "n_features_in_"):
+            if df_encoded.shape[1] != model.n_features_in_:
+                st.error(
+                    f"Feature mismatch: model expects "
+                    f"{model.n_features_in_} features, but received "
+                    f"{df_encoded.shape[1]}."
+                )
+                st.stop()
 
-        expected_features = model.n_features_in_
+        prediction = model.predict(df_encoded)[0]
 
-        if df.shape[1] > expected_features:
-            df = df.iloc[:, :expected_features]
+        st.subheader("Prediction Result")
 
-        elif df.shape[1] < expected_features:
+        if prediction == 1:
+            st.success(
+                " The customer will subscribe to a deposit."
+            )
+        else:
+            st.info(
+                "The customer will not subscribe to a deposit."
+            )
 
-            missing = expected_features - df.shape[1]
+        if hasattr(model, "predict_proba"):
+            probabilities = model.predict_proba(df_encoded)[0]
+            probability = probabilities[1] * 100
 
-            for i in range(missing):
-                df[f"missing_{i}"] = 0
+            st.write(
+                f"Probability of subscription: "
+                f"**{probability:.2f}%**"
+            )
 
-    prediction = model.predict(df)[0]
-
-    if prediction == 1:
-        st.success(
-            "The customer will subscribe to a deposit."
+    except Exception as e:
+        st.error(
+            "An error occurred while making the prediction."
         )
-    else:
-        st.info(
-            "The customer will not subscribe to a deposit."
-        )
+        st.exception(e)
+
+
 
