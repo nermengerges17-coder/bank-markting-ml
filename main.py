@@ -123,84 +123,81 @@ for col in numeric_cols:
     user_inputs[col] = 0.0
 
 if st.button("🔮 Predict", use_container_width=True):
+    try:
+        df = pd.DataFrame([user_inputs])
 
+        df_encoded = pd.get_dummies(
+            df,
+            columns=[
+                col for col in categorical_cols
+                if col in df.columns
+            ],
+            dtype=int
+        )
 
-try:
-    df = pd.DataFrame([user_inputs])
+        df_encoded = df_encoded.loc[
+            :,
+            ~df_encoded.columns.duplicated()
+        ]
 
-    df_encoded = pd.get_dummies(
-        df,
-        columns=[
-            col for col in categorical_cols
-            if col in df.columns
-        ],
-        dtype=int
-    )
+        existing_numeric_cols = [
+            col
+            for col in numeric_cols
+            if col in df_encoded.columns
+        ]
 
-    df_encoded = df_encoded.loc[
-        :,
-        ~df_encoded.columns.duplicated()
-    ]
+        if existing_numeric_cols:
+            try:
+                df_encoded[existing_numeric_cols] = scaler.transform(
+                    df_encoded[existing_numeric_cols]
+                )
+            except Exception:
+                pass
 
-    existing_numeric_cols = [
-        col
-        for col in numeric_cols
-        if col in df_encoded.columns
-    ]
+        expected_features = list(feature_names)
 
-    if existing_numeric_cols:
-        try:
-            df_encoded[existing_numeric_cols] = scaler.transform(
-                df_encoded[existing_numeric_cols]
+        for col in expected_features:
+            if col not in df_encoded.columns:
+                df_encoded[col] = 0
+
+        df_encoded = df_encoded.reindex(
+            columns=expected_features,
+            fill_value=0
+        )
+
+        if hasattr(model, "n_features_in_"):
+            if df_encoded.shape[1] != model.n_features_in_:
+                st.error(
+                    f"Feature mismatch: model expects "
+                    f"{model.n_features_in_} features, but received "
+                    f"{df_encoded.shape[1]}."
+                )
+                st.stop()
+
+        prediction = model.predict(df_encoded)[0]
+
+        st.subheader("Prediction Result")
+
+        if prediction == 1:
+            st.success(
+                "✅ The customer will subscribe to a deposit."
             )
-        except Exception:
-            pass
-
-    expected_features = list(feature_names)
-
-    for col in expected_features:
-        if col not in df_encoded.columns:
-            df_encoded[col] = 0
-
-    df_encoded = df_encoded.reindex(
-        columns=expected_features,
-        fill_value=0
-    )
-
-    if hasattr(model, "n_features_in_"):
-        if df_encoded.shape[1] != model.n_features_in_:
-            st.error(
-                f"Feature mismatch: model expects "
-                f"{model.n_features_in_} features, but received "
-                f"{df_encoded.shape[1]}."
+        else:
+            st.info(
+                "❌ The customer will not subscribe to a deposit."
             )
-            st.stop()
 
-    prediction = model.predict(df_encoded)[0]
+        if hasattr(model, "predict_proba"):
+            probabilities = model.predict_proba(df_encoded)[0]
+            probability = probabilities[1] * 100
 
-    st.subheader("Prediction Result")
+            st.write(
+                f"Probability of subscription: "
+                f"**{probability:.2f}%**"
+            )
 
-    if prediction == 1:
-        st.success(
-            "✅ The customer will subscribe to a deposit."
+    except Exception as e:
+        st.error(
+            "An error occurred while making the prediction."
         )
-    else:
-        st.info(
-            "❌ The customer will not subscribe to a deposit."
-        )
-
-    if hasattr(model, "predict_proba"):
-        probabilities = model.predict_proba(df_encoded)[0]
-        probability = probabilities[1] * 100
-
-        st.write(
-            f"Probability of subscription: "
-            f"**{probability:.2f}%**"
-        )
-
-except Exception as e:
-    st.error(
-        "An error occurred while making the prediction."
-    )
-    st.exception(e)
-
+        st.exception(e)
