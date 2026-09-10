@@ -5,15 +5,16 @@ import pandas as pd
 import pickle
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(**file**).resolve().parent
+
 MODEL_PATH = BASE_DIR / "Final_model (1).pkl"
 PREPROCESS_PATH = BASE_DIR / "model_scaler (1).pkl"
 
 with open(MODEL_PATH, "rb") as f:
-  model = pickle.load(f)
+ model = pickle.load(f)
 
 with open(PREPROCESS_PATH, "rb") as f:
-  preprocess = pickle.load(f)
+ preprocess = pickle.load(f)
 
 scaler = preprocess["scaler"]
 feature_names = preprocess["feature_names"]
@@ -114,14 +115,6 @@ user_inputs["month"] = st.selectbox(
 "dec"
 ]
 )
-
-for col in numeric_cols:
-  if col not in user_inputs:
-   if col == "age":
-    user_inputs[col] = user_inputs["age"]
-   else:
-    user_inputs[col] = 0.0
-
 if st.button("🔮 Predict", use_container_width=True):
     try:
         df = pd.DataFrame([user_inputs])
