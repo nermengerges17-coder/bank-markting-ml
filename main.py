@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import pandas as pd
 import pickle
@@ -11,10 +9,10 @@ MODEL_PATH = BASE_DIR / "Final_model (1).pkl"
 PREPROCESS_PATH = BASE_DIR / "model_scaler (1).pkl"
 
 with open(MODEL_PATH, "rb") as f:
- model = pickle.load(f)
+    model = pickle.load(f)
 
 with open(PREPROCESS_PATH, "rb") as f:
- preprocess = pickle.load(f)
+    preprocess = pickle.load(f)
 
 scaler = preprocess["scaler"]
 feature_names = preprocess["feature_names"]
@@ -22,16 +20,16 @@ numeric_cols = preprocess["numeric_cols"]
 categorical_cols = preprocess["categorical_cols"]
 
 st.set_page_config(
-page_title="Bank Deposit Predictor",
-page_icon="🏦",
-layout="centered"
+    page_title="Bank Deposit Predictor",
+    page_icon="🏦",
+    layout="centered"
 )
 
 st.title("🏦 Bank Deposit Predictor")
 
 st.write(
-"Enter the customer information to predict "
-"whether the customer will subscribe to a deposit."
+    "Enter the customer information to predict "
+    "whether the customer will subscribe to a deposit."
 )
 
 user_inputs = {}
@@ -39,140 +37,152 @@ user_inputs = {}
 st.subheader("Customer Information")
 
 user_inputs["age"] = st.number_input(
-"Age",
-min_value=18,
-max_value=100,
-value=30,
-step=1
+    "Age",
+    min_value=18,
+    max_value=100,
+    value=30,
+    step=1
 )
 
 user_inputs["job"] = st.selectbox(
-"Job",
-[
-"admin.",
-"blue-collar",
-"entrepreneur",
-"housemaid",
-"management",
-"retired",
-"self-employed",
-"services",
-"student",
-"technician",
-"unemployed",
-"unknown"
-]
+    "Job",
+    [
+        "admin.",
+        "blue-collar",
+        "entrepreneur",
+        "housemaid",
+        "management",
+        "retired",
+        "self-employed",
+        "services",
+        "student",
+        "technician",
+        "unemployed",
+        "unknown"
+    ]
 )
 
 user_inputs["marital"] = st.selectbox(
-"Marital Status",
-["married", "single", "divorced"]
+    "Marital Status",
+    ["married", "single", "divorced"]
 )
 
 user_inputs["education"] = st.selectbox(
-"Education",
-["primary", "secondary", "tertiary", "unknown"]
+    "Education",
+    ["primary", "secondary", "tertiary", "unknown"]
 )
 
 user_inputs["default"] = st.selectbox(
-"Credit Default",
-["no", "yes"]
+    "Credit Default",
+    ["no", "yes"]
 )
 
 user_inputs["balance"] = st.number_input(
-"Balance",
-value=0.0,
-step=100.0
+    "Balance",
+    value=0.0,
+    step=100.0
 )
 
 user_inputs["housing"] = st.selectbox(
-"Housing Loan",
-["no", "yes"]
+    "Housing Loan",
+    ["no", "yes"]
 )
 
 user_inputs["loan"] = st.selectbox(
-"Personal Loan",
-["no", "yes"]
+    "Personal Loan",
+    ["no", "yes"]
 )
 
 user_inputs["contact"] = st.selectbox(
-"Contact",
-["cellular", "telephone", "unknown"]
+    "Contact",
+    ["cellular", "telephone", "unknown"]
 )
 
 user_inputs["day"] = st.number_input(
-"Contact Day",
-min_value=1,
-max_value=31,
-value=1,
-step=1
+    "Contact Day",
+    min_value=1,
+    max_value=31,
+    value=1,
+    step=1
 )
 
 user_inputs["month"] = st.selectbox(
-"Contact Month",
-[
-"jan",
-"feb",
-"mar",
-"apr",
-"may",
-"jun",
-"jul",
-"aug",
-"sep",
-"oct",
-"nov",
-"dec"
-]
+    "Contact Month",
+    [
+        "jan",
+        "feb",
+        "mar",
+        "apr",
+        "may",
+        "jun",
+        "jul",
+        "aug",
+        "sep",
+        "oct",
+        "nov",
+        "dec"
+    ]
 )
 
 user_inputs["duration"] = st.number_input(
-"Call Duration",
-min_value=0.0,
-value=0.0,
-step=1.0
+    "Call Duration",
+    min_value=0.0,
+    value=0.0,
+    step=1.0
 )
 
 user_inputs["campaign"] = st.number_input(
-"Campaign",
-min_value=0.0,
-value=1.0,
-step=1.0
+    "Campaign",
+    min_value=0.0,
+    value=1.0,
+    step=1.0
 )
 
 user_inputs["pdays"] = st.number_input(
-"Previous Contact Days",
-min_value=-1.0,
-value=-1.0,
-step=1.0
+    "Previous Contact Days",
+    min_value=-1.0,
+    value=-1.0,
+    step=1.0
 )
 
 user_inputs["previous"] = st.number_input(
-"Previous Contacts",
-min_value=0.0,
-value=0.0,
-step=1.0
+    "Previous Contacts",
+    min_value=0.0,
+    value=0.0,
+    step=1.0
 )
 
 user_inputs["poutcome"] = st.selectbox(
-"Previous Outcome",
-[
-"unknown",
-"failure",
-"success",
-"other"
-]
+    "Previous Outcome",
+    ["unknown", "failure", "success", "other"]
 )
+
 if st.button("🔮 Predict", use_container_width=True):
     try:
         df = pd.DataFrame([user_inputs])
 
+        df["age_group"] = pd.cut(
+            df["age"],
+            bins=[0, 19, 39, 59, float("inf")],
+            labels=["teen", "young_adult", "adult", "senior"]
+        )
+
+        df["loan_housing"] = df[["housing", "loan"]].apply(
+            lambda x: "yes"
+            if x["housing"] == "yes" and x["loan"] == "yes"
+            else "no",
+            axis=1
+        )
+
+        cat_cols = [
+            col for col in categorical_cols
+            if col in df.columns
+        ]
+
         df_encoded = pd.get_dummies(
             df,
-            columns=[
-                col for col in categorical_cols
-                if col in df.columns
-            ],
+            columns=cat_cols,
+            drop_first=True,
             dtype=int
         )
 
@@ -181,39 +191,23 @@ if st.button("🔮 Predict", use_container_width=True):
             ~df_encoded.columns.duplicated()
         ]
 
-        existing_numeric_cols = [
-            col
-            for col in numeric_cols
-            if col in df_encoded.columns
-        ]
-
-        if existing_numeric_cols:
-            try:
-                df_encoded[existing_numeric_cols] = scaler.transform(
-                    df_encoded[existing_numeric_cols]
-                )
-            except Exception:
-                pass
-
-        expected_features = list(feature_names)
-
-        for col in expected_features:
+        for col in feature_names:
             if col not in df_encoded.columns:
                 df_encoded[col] = 0
 
         df_encoded = df_encoded.reindex(
-            columns=expected_features,
+            columns=feature_names,
             fill_value=0
         )
 
-        if hasattr(model, "n_features_in_"):
-            if df_encoded.shape[1] != model.n_features_in_:
-                st.error(
-                    f"Feature mismatch: model expects "
-                    f"{model.n_features_in_} features, but received "
-                    f"{df_encoded.shape[1]}."
-                )
-                st.stop()
+        existing_numeric_cols = [
+            col for col in numeric_cols
+            if col in df_encoded.columns
+        ]
+if existing_numeric_cols:
+            df_encoded[existing_numeric_cols] = scaler.transform(
+                df_encoded[existing_numeric_cols]
+            )
 
         prediction = model.predict(df_encoded)[0]
 
@@ -226,15 +220,6 @@ if st.button("🔮 Predict", use_container_width=True):
         else:
             st.info(
                 "❌ The customer will not subscribe to a deposit."
-            )
-
-        if hasattr(model, "predict_proba"):
-            probabilities = model.predict_proba(df_encoded)[0]
-            probability = probabilities[1] * 100
-
-            st.write(
-                f"Probability of subscription: "
-                f"**{probability:.2f}%**"
             )
 
     except Exception as e:
