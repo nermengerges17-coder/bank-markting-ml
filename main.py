@@ -158,18 +158,25 @@ user_inputs["poutcome"] = st.selectbox(
 )
 
 if st.button("🔮 Predict", use_container_width=True):
+
     try:
         df = pd.DataFrame([user_inputs])
 
         df["age_group"] = pd.cut(
             df["age"],
             bins=[0, 19, 39, 59, float("inf")],
-            labels=["teen", "young_adult", "adult", "senior"]
+            labels=[
+                "teen",
+                "young_adult",
+                "adult",
+                "senior"
+            ]
         )
 
         df["loan_housing"] = df[["housing", "loan"]].apply(
             lambda x: "yes"
-            if x["housing"] == "yes" and x["loan"] == "yes"
+            if x["housing"] == "yes"
+            and x["loan"] == "yes"
             else "no",
             axis=1
         )
@@ -204,7 +211,8 @@ if st.button("🔮 Predict", use_container_width=True):
             col for col in numeric_cols
             if col in df_encoded.columns
         ]
-if existing_numeric_cols:
+
+        if existing_numeric_cols:
             df_encoded[existing_numeric_cols] = scaler.transform(
                 df_encoded[existing_numeric_cols]
             )
