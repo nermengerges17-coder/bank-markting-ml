@@ -221,14 +221,11 @@ if st.button("🔮 Predict", use_container_width=True):
 
         st.subheader("Prediction Result")
 
-        if prediction == 1:
-            st.success(
-                "✅ The customer will subscribe to a deposit."
-            )
-        else:
-            st.info(
-                "❌ The customer will not subscribe to a deposit."
-            )
+       if prediction == "yes":
+          st.success("✅ The customer will subscribe to a deposit.")
+       else:
+          st.info("❌ The customer will not subscribe to a deposit.")
+            
 
     except Exception as e:
         st.error(
